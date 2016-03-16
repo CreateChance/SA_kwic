@@ -110,11 +110,6 @@ public class KWIC{
  */
 
   private int[][] alphabetized_;
-  
-  // added by Baniel
-  char[] complete_chars_ = new char[2048];
-  int[] complete_line_index_ = new int[32];
-  int[] complete_alphabetized_;
 
 //----------------------------------------------------------------------
 /**
@@ -583,74 +578,6 @@ public class KWIC{
       alphabetized_count++;
     }
   }
-  
-  public void completeAlphabetizing() {
-	  complete_alphabetized_ = new int[complete_line_index_.length];
-	  int temp;
-	  int low;
-	  int mid;
-	  int high;
-	  
-	  System.arraycopy(complete_line_index_, 0, complete_alphabetized_, 
-							0, complete_line_index_.length);
-	  
-	  for(int i = 0; i < complete_alphabetized_.length; i++) {
-		temp = complete_alphabetized_[i];
-        low = 0;
-        high = i - 1;
-        mid = 0;
-        while(low <= high) {
-            mid = (low + high) / 2;
-            if(!isBigger(complete_alphabetized_[mid], temp, 
-						getMinLen(mid, i))) {
-                low = mid + 1;
-            } else {
-                high = mid - 1;
-            }
-        }
-        for(int j = i - 1; j >= low; j--) {
-            complete_alphabetized_[j+1] = complete_alphabetized_[j];
-        }
-        if (low != i) {
-			complete_alphabetized_[low] = temp;
-		}
-      }
-  }
-  
-  private int getMinLen(int pos1, int pos2) {
-	  
-	  if (getLineLen(pos1) > getLineLen(pos2)) {
-		  return getLineLen(pos2);
-	  }
-	  
-	  return getLineLen(pos1);
-
-  }
-  
-  private int getLineLen(int pos) {
-	  if (pos == complete_line_index_.length - 1) {
-		  return complete_chars_.length - complete_line_index_[pos];
-	  } else {  
-		  return complete_line_index_[pos + 1] - complete_line_index_[pos];
-	  }
-  }
-  
-  private boolean isBigger(int pos1, int pos2, int len) {
-	  boolean ret = false;
-	  for (int i = 0; i < len; i++) {
-		  if (complete_chars_[pos1 + i] == complete_chars_[pos2 + i]) {
-			  continue;
-		  } else if (complete_chars_[pos1 + i] > complete_chars_[pos2 + i]) {
-			  ret = true;
-			  break;
-		  } else {
-			  ret = false;
-			  break;
-		  }
-	  }
-	  
-	  return ret;
-  }
 
 //----------------------------------------------------------------------
 /**
@@ -682,191 +609,6 @@ public class KWIC{
       System.out.print('\n');
     }    
   }
-  
-  public void completeOutput() {
-	  int line_end = 0;
-	  
-	  for (int i = 0; i < complete_alphabetized_.length; i++) {
-		  // find end of current line.
-		  for (int j = 0; j < complete_line_index_.length; j++) {
-			  if (j == complete_line_index_.length - 1) {
-				  line_end = complete_chars_.length;
-				  break;
-			  } else if (complete_alphabetized_[i] == complete_line_index_[j]) {
-				  line_end = complete_line_index_[j + 1];
-				  break;
-			  }
-		  }
-
-		  System.out.println(new String(complete_chars_, complete_alphabetized_[i], 
-										line_end - complete_alphabetized_[i]));
-		  line_end = 0;
-	  }
-  }
-  
-  private boolean isEndOfLine(int pos) {
-	  for (int i = 1; i < complete_line_index_.length; i++) {
-		  if (pos == complete_line_index_[i]) {
-			  System.out.println("pos: " + pos);
-			  return true;
-		  }
-	  }
-	  
-	  return false;
-  }
-  
-  public void filterNumber() {
-	  char[] no_number_chars = new char[complete_chars_.length];
-	  
-	  // filter out all the line start with number.
-	  int origin_index = 0;
-	  int new_index = 0;
-	  int num_char_pos = 0;
-	  int num_word_len = 0;
-	  int chars_len = complete_chars_.length;
-	  while (origin_index < complete_chars_.length) {
-		  try {
-			  Thread.sleep(500);
-		  } catch (Exception e) {}
-		  System.out.println(complete_chars_[origin_index]);
-		  if (complete_chars_[origin_index] >= '0' && 
-							complete_chars_[origin_index] <= '9') {
-			  num_char_pos = origin_index;
-			  while (origin_index < complete_chars_.length &&
-						complete_chars_[origin_index] != ' ' &&
-						!isEndOfLine(origin_index)) {
-				  origin_index++;
-			  }
-			  
-		  } else if (num_char_pos != 0 && complete_chars_[origin_index] == ' ') {
-			  origin_index++;
-			  num_word_len++;
-		  } else {
-			  if (num_char_pos != 0) {
-				  // update chars length
-				  chars_len -= num_word_len;
-				  // update line index pos.
-				  for (int i = 0; i < complete_line_index_.length; i++) {
-					  if (num_char_pos < complete_line_index_[i]) {
-						  for (int j = i; j < complete_line_index_.length; j++) {
-							  complete_line_index_[j] -= num_word_len;
-						  }
-						  break;
-					  }
-				  }
-
-				  num_char_pos = 0;
-				  num_word_len = 0;
-			  }
-			  System.out.println(origin_index + ",");
-			  no_number_chars[new_index] = complete_chars_[origin_index];
-			  new_index++;
-			  origin_index++;
-		  }
-	  }
-	  
-	  // check if there is one line has been removed totally.
-	  // If one line is removed totally, there will be two
-	  // numbers in line index array equals.
-	  int new_line_index_len = complete_line_index_.length;
-	  for (int i = 0; i < complete_line_index_.length - 1; i++) {
-		  System.out.println("new_line_index_len: " + new_line_index_len);
-		  if (complete_line_index_[i] == complete_line_index_[i + 1]) {
-			  new_line_index_len--;
-			  for (int j = i; j < complete_line_index_.length - 1; j++) {
-				  complete_line_index_[j] = complete_line_index_[j + 1];
-			  }
-		  }
-	  }
-	  
-	  // set size of line index array to real size
-	  int[] new_line_index = new int[new_line_index_len];
-	  System.arraycopy(complete_line_index_, 0, new_line_index, 0, new_line_index_len);
-	  complete_line_index_ = new_line_index;
-	  
-	  // set size of chars array to real size
-	  char[] new_chars = new char[chars_len];
-	  System.arraycopy(no_number_chars, 0, new_chars, 0, chars_len);
-	  complete_chars_ = new_chars;
-	  
-	  // for debug
-	  for (int i = 0; i < complete_line_index_.length; i++) {
-		  System.out.print(complete_line_index_[i] + " ");
-	  }
-	  System.out.println();
-
-	  for (int i = 0; i < complete_chars_.length; i++) {
-		  System.out.print(complete_chars_[i] + " ");
-	  }
-	  System.out.println();
-  }
-  
-  public void completeCircularShift() {
-	  int char_count = 0;
-	  int line_count = 0;
-	  StringBuffer tmp = new StringBuffer();
-	  String one_line;
-	  String[] words;
-	  
-	  for (int i = 0; i < line_index_.length; i++) {
-		  // only one line
-		  if (line_index_.length == 1) {
-			  one_line = new String(chars_);
-		  } else if (i == (line_index_.length - 1)) {
-			  one_line = new String(chars_, line_index_[i], chars_.length - line_index_[i]);
-		  } else {
-			  one_line = new String(chars_, line_index_[i], line_index_[i+1] - line_index_[i]);
-		  }
-		  // split by one or more space
-		  words = one_line.split("\\s+");  
-		  
-		  for (int j = 0; j < words.length; j++) {
-			  for (int k = 0; k < words.length; k++) {
-				  tmp.append(words[(j + k) % words.length]);
-				  if (k < words.length - 1) {
-					  tmp.append(" ");
-				  }
-			  }
-			  if (char_count + words.length * one_line.length() >= complete_chars_.length) {
-				  char[] new_chars = new char[complete_chars_.length + 2048];
-				  System.arraycopy(complete_chars_, 0, new_chars, 0, complete_chars_.length);
-				  complete_chars_ = new_chars;
-			  }
-		  
-			  if (line_count == complete_line_index_.length) {
-				  int[] new_line_index = new int[line_count + 32];
-				  System.arraycopy(complete_line_index_, 0, new_line_index, 0, line_count);
-				  complete_line_index_ = new_line_index;
-			  }
-			  
-			  System.arraycopy(tmp.toString().toCharArray(), 0, complete_chars_, 
-								char_count, tmp.length());
-			  complete_line_index_[line_count] = char_count;
-			  char_count += one_line.length();
-			  line_count++;
-			  // clear old data.
-			  tmp.delete(0, tmp.length());
-		  }
-	  }
-	  
-	  if (line_count != complete_line_index_.length) {
-		  int[] tmp_line = new int[line_count];
-		  System.arraycopy(complete_line_index_, 0, tmp_line, 0, line_count);
-		  complete_line_index_ = tmp_line;
-	  }
-	  
-	  if (char_count != complete_chars_.length) {
-		  char[] tmp_chars = new char[char_count];
-		  System.arraycopy(complete_chars_, 0, tmp_chars, 0, char_count);
-		  complete_chars_ = tmp_chars;   
-	  }
-	  
-	  // for debug
-	  for (int i = 0; i < complete_line_index_.length; i++) {
-		  System.out.print(complete_line_index_[i] + " ");
-	  }
-	  System.out.println();
-  }
 
 //----------------------------------------------------------------------
 /**
@@ -893,17 +635,9 @@ public class KWIC{
       System.exit(1);
     }
     kwic.input(args[0]);
-
-	System.out.println("======================origin version======================");
-	kwic.circularShift();
-	kwic.alphabetizing();
-	kwic.output();
-
-	System.out.println("======================complete version======================");
-	kwic.completeCircularShift();
-	kwic.filterNumber();
-	kwic.completeAlphabetizing();
-	kwic.completeOutput();
+    kwic.circularShift();
+    kwic.alphabetizing();
+    kwic.output();
   }
 
 //----------------------------------------------------------------------
