@@ -70,7 +70,7 @@ public class LineStorage{
  * automatically, and copies the elements of the old array into the new one.
  */
 
-  private ArrayList lines_ = new ArrayList();
+  private ArrayList<Line> lines_ = new ArrayList<>();
 
 //----------------------------------------------------------------------
 /**
@@ -103,22 +103,9 @@ public class LineStorage{
   public void setChar(char c, int position, int word, int line){
     
         // get the specified line
-    ArrayList current_line = (ArrayList) lines_.get(line);
+    Line current_line = lines_.get(line);
 
-        // get the specified word
-    String current_word = (String) current_line.get(word);
-    
-        // Get character representation of the specified word
-    char[] chars = current_word.toCharArray();
-    
-        // set the new character at the specified positon
-    chars[position] = c;
-
-        // make new string represenation of the word
-    current_word = new String(chars);
-
-        // replace the old word with the new one
-    current_line.set(word, current_word);
+    current_line.setChar(c, position, word);
   }
 
 //----------------------------------------------------------------------
@@ -135,7 +122,7 @@ public class LineStorage{
  */
 
   public char getChar(int position, int word, int line){
-    return ((String) ((ArrayList) lines_.get(line)).get(word)).charAt(position);
+    return (lines_.get(line).getChar(position, word));
   }
 
 //----------------------------------------------------------------------
@@ -153,26 +140,9 @@ public class LineStorage{
   public void addChar(char c, int word, int line){
 
         // get the specified line
-    ArrayList current_line = (ArrayList) lines_.get(line);
+    Line current_line = lines_.get(line);
     
-        // get the specified word
-    String current_word = (String) current_line.get(word);
-
-        // create a new character array with the length of
-        // the old word increased by 1
-    char[] chars = new char[current_word.length() + 1];
-    
-        // copy the old word into the new character array
-    current_word.getChars(0, chars.length - 1, chars, 0);
-    
-        // add the new character at the end of the word
-    chars[chars.length - 1] = c;
-
-        // make new string represenation of the word
-    current_word = new String(chars);
-    
-        // replace the old word with the new one
-    current_line.set(word, current_word);
+    current_line.addChar(c, word);
   }
 
 //----------------------------------------------------------------------
@@ -191,25 +161,9 @@ public class LineStorage{
   public void deleteChar(int position, int word, int line){
     
         // get the specified line
-    ArrayList current_line = (ArrayList) lines_.get(line);
+    Line current_line = lines_.get(line);
     
-        // get the specified word
-    String current_word = (String) current_line.get(word);
-    
-        // create a new character array with the length of
-        // the old word decreased by 1
-    char[] chars = new char[current_word.length() - 1];
-    
-        // copy the old word into the new character array
-        // skip the character that should be deleted
-    current_word.getChars(0, position, chars, 0);
-    current_word.getChars(position + 1, chars.length + 1, chars, position);
- 
-        // make new string represenation of the word
-    current_word = new String(chars);
-    
-        // replace the old word with the new one
-    current_line.set(word, current_word);    
+    current_line.deleteChar(position, word);
   }
 
 //----------------------------------------------------------------------
@@ -221,7 +175,7 @@ public class LineStorage{
  */
 
   public int getCharCount(int word, int line){
-    return ((String) ((ArrayList) lines_.get(line)).get(word)).length();
+    return (lines_.get(line).getCharCount(word));
   }
 
 //----------------------------------------------------------------------
@@ -259,10 +213,10 @@ public class LineStorage{
   public void setWord(String chars, int word, int line){
 
         // get the specified line
-    ArrayList current_line = (ArrayList) lines_.get(line);
+    Line current_line = lines_.get(line);
     
         // replace the old word with the new one
-    current_line.set(word, chars);
+    current_line.setWord(chars, word);
   }
 
 //----------------------------------------------------------------------
@@ -279,7 +233,7 @@ public class LineStorage{
  */
 
   public String getWord(int word, int line){
-    return (String) ((ArrayList) lines_.get(line)).get(word);
+    return (lines_.get(line).getWord(word));
   }
 
 //----------------------------------------------------------------------
@@ -315,10 +269,10 @@ public class LineStorage{
   public void addWord(String chars, int line){
 
         // get the specified line
-    ArrayList current_line = (ArrayList) lines_.get(line);
+    Line current_line = lines_.get(line);
     
         // add the new word
-    current_line.add(chars);
+    current_line.addWord(chars);
   }
 
 //----------------------------------------------------------------------
@@ -335,10 +289,10 @@ public class LineStorage{
   public void addEmptyWord(int line){
     
         // get the specified line
-    ArrayList current_line = (ArrayList) lines_.get(line);
+    Line current_line = lines_.get(line);
     
         // add the new word
-    current_line.add(new String());
+    current_line.addEmptyWord();;
   }
 
 //----------------------------------------------------------------------
@@ -356,10 +310,10 @@ public class LineStorage{
   public void deleteWord(int word, int line){
 
         // get the specified line
-    ArrayList current_line = (ArrayList) lines_.get(line);
+    Line current_line = lines_.get(line);
     
         // delete the specified word
-    current_line.remove(word);
+    current_line.deleteWord(word);
   }
 
 //----------------------------------------------------------------------
@@ -370,7 +324,7 @@ public class LineStorage{
  */
 
   public int getWordCount(int line){
-    return ((ArrayList) lines_.get(line)).size();
+    return (lines_.get(line)).getWordCount();
   }
 
 //----------------------------------------------------------------------
@@ -413,16 +367,14 @@ public class LineStorage{
  */
 
   public void setLine(String[] words, int line){
-
-        // get the specified line
-    ArrayList current_line = (ArrayList) lines_.get(line);
-
-        // remove old words
-    current_line.clear();
+    Line new_line = new Line();
     
-        // add words
-    for(int i = 0; i < words.length; i++)
-      current_line.add(words[i]);
+    for (int i = 0; i < words.length; i++) {
+    	new_line.addWord(words[i]);
+    }
+    
+    lines_.set(line, new_line);
+    
   }
 
 //----------------------------------------------------------------------
@@ -441,12 +393,12 @@ public class LineStorage{
   public String[] getLine(int line){
 
         // get the specified line
-    ArrayList current_line = (ArrayList) lines_.get(line);
+    Line current_line = lines_.get(line);
     
         // create the String[] representation of the line
-    String[] tmp = new String[current_line.size()];
+    String[] tmp = new String[current_line.getWordCount()];
     for(int i = 0; i < tmp.length; i++)
-      tmp[i] = (String) current_line.get(i);
+      tmp[i] = current_line.getWord(i);
 
     return tmp;
   }
@@ -467,10 +419,10 @@ public class LineStorage{
   public String getLineAsString(int line){
 
         // get the specified line
-    ArrayList current_line = (ArrayList) lines_.get(line);
+    Line current_line = lines_.get(line);
     
         // calculate the length of the line
-    int size = current_line.size();
+    int size = current_line.getWordCount();
     
     int length = 0;
     for(int i = 0; i < size; i++)
@@ -531,11 +483,11 @@ public class LineStorage{
   public void addLine(String[] words){
     
         // create the new line
-    ArrayList current_line = new ArrayList();
+    Line current_line = new Line();
     
         // add words
     for(int i = 0; i < words.length; i++)
-      current_line.add(words[i]);
+      current_line.addWord(words[i]);
 
         // add the new line at the end
     lines_.add(current_line);
@@ -556,7 +508,7 @@ public class LineStorage{
   public void addEmptyLine(){
 
         // create the new line
-    ArrayList current_line = new ArrayList();
+    Line current_line = new Line();
     
         // add the new line at the end
     lines_.add(current_line);

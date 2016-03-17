@@ -55,6 +55,14 @@ public class KWIC{
  * Fields
  *
  */
+	private final String CMD_PROMPT = "Add,Print,Quit: ";
+	private final String INPUT_PROMPT = "> ";
+	private boolean isCmdMode = true;
+	
+	// cmds
+	private final int CMD_ADD_LINE = 100;
+	private final int CMD_PRINT_LINES = 101;
+	private final int CMD_QUIT = 102;
 //----------------------------------------------------------------------
 
 //----------------------------------------------------------------------
@@ -75,16 +83,15 @@ public class KWIC{
 /**
  * Parses the data, makes shifts and sorts them. At the end prints the
  * sorted shifts.
- * @param file name of the input file
  * @return void
  */
 
-  public void execute(String file){
+  public void execute(){
+	  
+	String line = null;
+	int cmdCode = -1;
 
         // initialize all variables
-    
-        // storage for original lines
-    LineStorage lines = new LineStorage();
 
         // input reader
     Input input = new Input();
@@ -100,16 +107,58 @@ public class KWIC{
 
         // read and parse the input file
         // store results in the line storage instance
-    input.parse(file, lines);
+    while (!"q".equals(line)) {
+    	if (isCmdMode) {
+    		System.out.print(CMD_PROMPT);
+    	} else {
+    		System.out.print(INPUT_PROMPT);
+    	}
+    	line = input.readLine();
+    	
+    	if (isCmdMode) {
+	    	cmdCode = parseCmd(line);
+    		switch (cmdCode) {
+			case CMD_ADD_LINE:
+				isCmdMode = false;
+				break;
+			case CMD_PRINT_LINES:
+				if (shifter.getLineCount() == 0) {
+					System.out.println("<---Got nothing to show!--->");
+				} else {
+					// sort all shifts alphabetically
+				    alphabetizer.alpha(shifter);
+	
+				    // print sorted shifts
+				    output.print(alphabetizer);
+				}
+				break;
+			case CMD_QUIT:
+				System.out.println("Good Bye!");
+				System.exit(0);
+				break;
 
-        // make all circular shifts of the original set of lines
-    shifter.setup(lines);
-    
-        // sort all shifts alphabetically
-    alphabetizer.alpha(shifter);
-
-        // print sorted shifts
-    output.print(alphabetizer);
+			default:
+				System.out.println("Unknown command!");
+				break;
+			}
+    	} else {
+    	    shifter.setup(line);
+    	    isCmdMode = true;
+    	}
+    }
+  }
+  
+  private int parseCmd(String cmd) {
+	  int cmdCode = -1;
+	  if("a".equals(cmd)) {
+		  cmdCode = CMD_ADD_LINE;
+	  } else if ("p".equals(cmd)) {
+		  cmdCode = CMD_PRINT_LINES;
+	  } else if ("q".equals(cmd)) {
+		  cmdCode = CMD_QUIT;
+	  }
+	  
+	  return cmdCode;
   }
 
 //----------------------------------------------------------------------
@@ -125,13 +174,9 @@ public class KWIC{
  */
 
   public static void main(String[] args){
-    if(args.length != 1){
-      System.err.println("KWIC Usage: java kwic.ms.KWIC file_name");
-      System.exit(1);
-    }
 
     KWIC kwic = new KWIC();
-    kwic.execute(args[0]);
+    kwic.execute();
   }
 
 //----------------------------------------------------------------------

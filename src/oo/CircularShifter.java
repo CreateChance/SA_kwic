@@ -58,7 +58,7 @@ public class CircularShifter{
  *
  */
 
-  private LineStorage shifts_;
+  private LineStorage shifts_ = new LineStorage();
 
 //----------------------------------------------------------------------
 /**
@@ -89,33 +89,24 @@ public class CircularShifter{
  * @return void
  */
 
-  public void setup(LineStorage lines){
-
-        // initialize the shifts instance variable
-    shifts_ = new LineStorage();
+  public void setup(String line){
     
-        // iterate through all lines from the original set
-    for(int i = 0; i < lines.getLineCount(); i++){
-      
-          // current line
-      String[] line = lines.getLine(i);
-      
-          // iterate through all words of the current line
-      for(int j = 0; j < line.length; j++){
-        
-            // add a new empty line for the current shift
-        shifts_.addEmptyLine();
-        
-            // add all words of the current shift
-        for(int k = j; k < (line.length + j); k++)
-
-              // add current word to the last line
-              // index is the remainder of dividing k and line.length
-          shifts_.addWord(line[k % line.length], shifts_.getLineCount() - 1);
-
-      }
-      
-    }
+	  String[] words = line.split("\\s+");
+	  
+	      // iterate through all words of the current line
+	  for(int j = 0; j < words.length; j++){
+	    
+	        // add a new empty line for the current shift
+	    shifts_.addEmptyLine();
+	    
+	        // add all words of the current shift
+	    for(int k = j; k < (words.length + j); k++)
+	
+	          // add current word to the last line
+	          // index is the remainder of dividing k and line.length
+	      shifts_.addWord(words[k % words.length], shifts_.getLineCount() - 1);
+	
+	  }
   }
 
 //----------------------------------------------------------------------
