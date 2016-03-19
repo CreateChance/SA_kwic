@@ -62,6 +62,7 @@ public class KWIC{
  * Fields
  *
  */
+	public static String noiseFile;
 //----------------------------------------------------------------------
 
 //----------------------------------------------------------------------
@@ -90,22 +91,31 @@ public class KWIC{
     try{
       
           // pipes
-      Pipe in_cs = new Pipe();
-      Pipe cs_al = new Pipe();
+      Pipe in_nf = new Pipe();
+      Pipe nf_fc = new Pipe();
+      Pipe fc_cs = new Pipe();
+      Pipe cs_fc = new Pipe();
+      Pipe fc_al = new Pipe();
       Pipe al_ou = new Pipe();
       
           // input file
       FileInputStream in = new FileInputStream(file);
 
           // filters connected into a pipeline
-      Input input = new Input(in, in_cs);
-      CircularShifter shifter = new CircularShifter(in_cs, cs_al);
-      Alphabetizer alpha = new Alphabetizer(cs_al, al_ou);
+      Input input = new Input(in, in_nf);
+      NoiseFilter filter = new NoiseFilter(in_nf, nf_fc);
+      FirstWordCapitalizer capitalizer1 = new FirstWordCapitalizer(nf_fc, fc_cs);
+      CircularShifter shifter = new CircularShifter(fc_cs, cs_fc);
+      FirstWordCapitalizer capitalizer2 = new FirstWordCapitalizer(cs_fc, fc_al);
+      Alphabetizer alpha = new Alphabetizer(fc_al, al_ou);
       Output output = new Output(al_ou);
       
           // run it
       input.start();
+      filter.start();
+      capitalizer1.start();
       shifter.start();
+      capitalizer2.start();
       alpha.start();
       output.start();
     }catch(IOException exc){
@@ -126,10 +136,12 @@ public class KWIC{
  */
 
   public static void main(String[] args){
-    if(args.length != 1){
-      System.err.println("KWIC Usage: java kwic.ms.KWIC file_name");
+    if(args.length != 2){
+      System.err.println("KWIC Usage: java kwic.ms.KWIC file_name noise_file_name");
       System.exit(1);
     }
+    
+    noiseFile = args[1];
 
     KWIC kwic = new KWIC();
     kwic.execute(args[0]);
