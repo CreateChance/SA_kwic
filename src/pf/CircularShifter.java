@@ -90,7 +90,6 @@ public class CircularShifter extends Filter{
       
       int c = input_.read();
       while(c != -1){
-        
             // line has been read
         if(((char) c) == '\n'){
           
