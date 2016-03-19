@@ -25,6 +25,8 @@
 
 package kwic.es;
 
+import java.util.HashMap;
+
 /*
  * $Log$
 */
@@ -92,6 +94,19 @@ public class KWIC{
  * Fields
  *
  */
+	private final String CMD_PROMPT = "Add,Delete,Print,Index,Quit: ";
+	private final String INPUT_PROMPT = "> ";
+	private boolean isCmdMode = true;
+	
+	// cmds
+	private final int CMD_ADD_LINE = 100;
+	private final int CMD_DEL_LINE = 101;
+	private final int CMD_PRINT_LINES = 102;
+	private final int CMD_INDEX_LINES = 103;
+	private final int CMD_QUIT = 104;
+	
+	// word index hash map
+	private HashMap<String, Integer> indexes = new HashMap<>();
 //----------------------------------------------------------------------
 
 //----------------------------------------------------------------------
@@ -116,37 +131,157 @@ public class KWIC{
  * @return void
  */
 
-  public void execute(String file){
+  public void execute(){
+	  
+	  String line = null;
+	  int line_index;
+	  int cmdCode = -1;
+	  String[] words;
 
-        // initialize all variables
-    
-        // storage for original lines
-    LineStorageWrapper lines = new LineStorageWrapper();
+	// initialize all variables
+	
+	// storage for original lines
+	LineStorageWrapper lines = new LineStorageWrapper();
+	
+	    // storage for circular shifts
+	LineStorageWrapper shifts = new LineStorageWrapper();
+	
+	    // input reader
+	Input input = new Input();
+	
+	    // circular shifter
+	CircularShifter shifter = new CircularShifter(shifts);
+	    // declare interest in tracking changes
+	lines.addObserver(shifter);
+	
+	    // alphabetizer
+	Alphabetizer alphabetizer = new Alphabetizer();
+	    // declare interest in tracking changes
+	shifts.addObserver(alphabetizer);
+	
+	    // line printer
+	Output output = new Output();
+	
+	while (true) {
+		if (isCmdMode) {
+			System.out.print(CMD_PROMPT);
+		} else {
+			System.out.print(INPUT_PROMPT);
+		}
+		line = input.readLine();
+		
+		if (isCmdMode) {
+	    	cmdCode = parseCmd(line);
+			switch (cmdCode) {
+			case CMD_ADD_LINE:
+				isCmdMode = false;
+				break;
+			case CMD_DEL_LINE:
+				isCmdMode = false;
+				break;
+			case CMD_PRINT_LINES:
+				if (shifts.getLineCount() == 0) {
+					System.out.println("<---Got nothing to show!--->");
+				} else {
+				    // print sorted shifts
+					output.print(shifts);
+				}
+				break;
+			case CMD_INDEX_LINES:
+				if (indexes.isEmpty()) {
+					System.out.println("No indexes!");
+				} else {
+					System.out.println(indexes.toString());
+				}
+				break;
+			case CMD_QUIT:
+				System.out.println("Good Bye!");
+				System.exit(0);
+				break;
+	
+			default:
+				System.out.println("Unknown command!");
+				break;
+			}
+		} else {
+			words = line.split("\\s+");
+			switch (cmdCode) {
+			case CMD_ADD_LINE:
+				lines.addLine(words);
+				checkIndexes(line, true);
+				break;
+			case CMD_DEL_LINE:
+				line_index = getIndexOfLine(line, lines);
+				if (line_index == -1) {
+					System.out.println("No such line!");
+				} else {
+					lines.deleteLine(line_index);
+					checkIndexes(line, false);
+				}
+				break;
 
-        // storage for circular shifts
-    LineStorageWrapper shifts = new LineStorageWrapper();
-
-        // input reader
-    Input input = new Input();
-
-        // circular shifter
-    CircularShifter shifter = new CircularShifter(shifts);
-        // declare interest in tracking changes
-    lines.addObserver(shifter);
-
-        // alphabetizer
-    Alphabetizer alphabetizer = new Alphabetizer();
-        // declare interest in tracking changes
-    shifts.addObserver(alphabetizer);
-
-        // line printer
-    Output output = new Output();
-
-        // read and parse the input file
-    input.parse(file, lines);
-
-        // print sorted shifts
-    output.print(shifts);
+			default:
+				break;
+			}
+			isCmdMode = true;
+		}
+	}
+  }
+  
+  private int getIndexOfLine(String line, LineStorageWrapper lines) {
+	  int index = -1;
+	  String current_line;
+	  
+	  for (int i = 0; i < lines.getLineCount(); i++) {
+		  current_line = lines.getLineAsString(i);
+		  if (current_line.equals(line)) {
+			  index = i;
+			  break;
+		  }
+	  }
+	  
+	  return index; 
+  }
+  
+  private int parseCmd(String cmd) {
+	  int cmdCode = -1;
+	  if("a".equals(cmd)) {
+		  cmdCode = CMD_ADD_LINE;
+	  } else if ("d".equals(cmd)) {
+		 cmdCode = CMD_DEL_LINE;
+	  } else if ("p".equals(cmd)) {
+		  cmdCode = CMD_PRINT_LINES;
+	  } else if ("i".equals(cmd)) {
+		  cmdCode = CMD_INDEX_LINES;
+	  } else if ("q".equals(cmd)) {
+		  cmdCode = CMD_QUIT;
+	  }
+	  
+	  return cmdCode;
+  }
+  
+  private void checkIndexes(String line, boolean isAdd) {
+	  String[] words = line.split("\\s+");
+	  Integer times = 0;
+	  
+	  for (int i = 0; i < words.length; i++) {
+		  times = indexes.get(words[i]);
+		  if (times == null) {
+			  if (isAdd) {
+				  indexes.put(words[i], 1);
+			  }
+		  } else {
+			  if (isAdd) {
+				  indexes.put(words[i], ++times);
+			  } else {
+				  if (--times == 0) {
+					  indexes.remove(words[i]);
+				  } else {
+					  indexes.put(words[i], times);
+				  }
+			  }
+		  }
+	  }
   }
 
 //----------------------------------------------------------------------
@@ -162,13 +297,9 @@ public class KWIC{
  */
 
   public static void main(String[] args){
-    if(args.length != 1){
-      System.err.println("KWIC Usage: java kwic.ms.KWIC file_name");
-      System.exit(1);
-    }
 
     KWIC kwic = new KWIC();
-    kwic.execute(args[0]);
+    kwic.execute();
   }
 
 //----------------------------------------------------------------------
